@@ -1,144 +1,257 @@
+var cl=console.log;
 
-const cl=console.log;
-const postscontainer=document.getElementById('postscontainer');
-const postsform=document.getElementById('postsform');
-const titlecontrol=document.getElementById('title');
-const contentcontrol=document.getElementById('content');
-const useridcontrol=document.getElementById('userid');
-const submitBtn  = document.getElementById('submitBtn');
-const updateBtn  = document.getElementById('updateBtn');
-const loader =document.getElementById('loader');
+const postsContainer=document.getElementById("postsContainer");
+const postForm=document.getElementById("postForm");
+const titleControl=document.getElementById("title");
+const contentControl=document.getElementById("content");
+const userIdControl=document.getElementById("userId");
+const addbtn=document.getElementById("addbtn");
+const updatebtn=document.getElementById("updatebtn");
+const loader=document.getElementById("loader");
 
-const BASE_URL=`https://jsonplaceholder.typicode.com`;
+const BASE_URL=`https://jsonplaceholder.typicode.com/`;
 
-const POSTS_URL=`${BASE_URL}/posts`;
+const POST_URL=`${BASE_URL}/posts`;
 
-const snackBar = (msg,icon) => {
-   swal.fire({
-      title : msg,
-      icon : icon,
-      timer : 2500
-   })
+const snackBar=(title,icon)=>{
+    swal.fire({
+        title:title,
+        icon:icon,
+        timer:2000,
+    })
 }
 
+const createAllPost=(array)=>{
+    let result="";
+    array.forEach(element => {
+        result+=`
+                <div class="card mb-4" id="${element.id}">
+                    <div class="card-header">
+                        <h2>${element.title}</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>${element.body}</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="onEdit(this)">Edit</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="onRemove(this)">Remove</button>
+                    </div>
+                </div>
+        `
+    });
+    postsContainer.innerHTML=result;
+}
 
-//fetch data
-
-const createPostsCards = (arr) => {
-        let result = ``;
-        for(let i=0; i<arr.length; i++){
-           result+=`
-               <div class="card mb-3" id=${arr[i].id}>
+const createSinglePost=(post)=>{
+    let card=document.createElement("div");
+    card.className='card mb-4';
+    card.id=post.id;
+    card.innerHTML=`
                 <div class="card-header">
-                    <h4 class='mb-0'>${arr[i].title}</h4>
+                    <h2>${post.title}</h2>
                 </div>
                 <div class="card-body">
-                   <p class='mb-0'>${arr[i].body}</p>
+                    <p>${post.body}</p>
                 </div>
                 <div class="card-footer d-flex justify-content-between">
-                    <button class="btn btn-sm btn-info" onClick="onEdit(this)">Edit</button>
-                    <button class="btn btn-sm btn-danger" onClick="onRemove(this)">Remove</button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="onEdit(this)">Edit</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="onRemove(this)">Remove</button>
                 </div>
-               </div>
-           `
-        }
-        postscontainer.innerHTML = result;
-}
-
-const createCard = (postObj) => {
-    let card = document.createElement('div');
-    card.className = 'card mb-3';
-    card.id = postObj.id;
-    card.innerHTML = `
-          <div class="card-header">
-                <h4 class='mb-0'>${postObj.title}</h4>
-            </div>
-            <div class="card-body">
-               <p class='mb-0'>${postObj.body}</p>
-            </div>
-            <div class="card-footer d-flex justify-content-between">
-                <button class="btn btn-sm btn-info" onClick="onEdit(this)">Edit</button>
-                <button class="btn btn-sm btn-danger" onClick="onRemove(this)">Remove</button>
-            </div>
-    `;
-
-    postscontainer.append(card)
-}
-
-const fetchPosts = () => {
-    loader.classList.remove('d-none')
-    fetch(POSTS_URL,{
-        method : 'GET',
-        body : null,
-        headers : {
-            "Auth" : "Token bearer from local storage"
-        }
-    })
-      .then(res =>{
-         return res.json() //promise
-      })
-      .then(res =>{
-        cl(res) //we get data
-        createPostsCards(res);
-      })
-      .catch(err => {snackBar(err, 'error')})
-      .finally(()=>{
-        loader.classList.add('d-none')
-      })
     
+    `;
+    postsContainer.append(card);
 }
 
-fetchPosts()
 
-//create data
-
-const onPostSubmit = (eve) => {
-    eve.preventDefault();
-    let postObj = {
-        title : titlecontrol.value,
-        body : contentcontrol.value,
-        userId : useridcontrol.value
-    }
-    loader.classList.remove('d-none')
-    fetch(POSTS_URL,{
-        method : 'POST',
-        body : JSON.stringify(postObj),
-        headers : {
-            "Auth" : "Token bearer from local storage"
+const fetchData=()=>{
+    loader.classList.remove("d-none");
+    fetch(POST_URL,{
+        method:"GET",
+        body:null,
+        headers:{
+            "Auth":"token",
+            "Content-type":"Application/json",
         }
     })
-    .then((res) => {
+     .then(res=>{
+        return res.json()
+     })
+     .then(data=>{
+        createAllPost(data);
+     })
+     .catch((err)=>{
+        cl(err);
+     })
+     .finally(()=>{
+        loader.classList.add("d-none");
+     })
+}
+
+fetchData();
+
+const onPostForm=(eve)=>{
+    eve.preventDefault();
+
+    let postObj={
+        title:titleControl.value,
+        body:contentControl.value,
+        userId:userIdControl.value,
+    }
+    loader.classList.remove("d-none");
+    fetch(POST_URL,{
+        method:"POST",
+        body:JSON.stringify(postObj),
+        headers:{
+            "Auth":"token",
+            "content-type":"Application/json",
+        }
+    })
+    .then(res=>{
        return res.json()
     })
-    .then(res => {
-        postObj.id = res.id;
-        createCard(postObj)
-        snackBar(`card with ${postObj.title} is created successfully !!!`, 'success')
+    .then(data=>{
+       
+        createSinglePost(data);
+        snackBar("the card is added successFully in database!!!","success");
+        
     })
-    .catch(err => {snackBar(err, 'error')})
+    .catch((err)=>{
+        cl(err);
+    })
     .finally(()=>{
-        postsform.reset();
-        loader.classList.add('d-none');
-      })
+        loader.classList.add("d-none");
+    })
 }
 
-const onEdit = (ele) => {
-    let EDIT_ID = ele.closest('.card').id;
-    localStorage.setItem('edit-id',EDIT_ID)
-    let EDIT_URL = `${BASE_URL}/posts/${EDIT_ID}`;
+const onEdit=(ele)=>{
+    //get id;
 
-    fetch(EDIT_URL, {
-        method : "GET",
-        body : null,
-        headers : {
-            "Auth" : "Token bearer from local storage"
+    let EDIT_ID=ele.closest(".card").id;
+    localStorage.setItem("editId",EDIT_ID);
+    
+
+    //create url to Api call
+
+    let EDIT_URL=`${POST_URL}/${EDIT_ID}`;
+    loader.classList.remove("d-none");
+    fetch(EDIT_URL,{
+        method:"GET",
+        body:null,
+        headers:{
+            "Auth":"token",
+            "Content-type":"Application/json",
         }
     })
-     .then(res => res.json)
-     .then(res => {
-        cl(res)
+     .then(res=>{
+        return res.json();
      })
-     .catch(err => {snackBar(err, 'error')})
+     .then(data=>{ 
+        titleControl.value=data.title;
+        contentControl.value=data.body;
+        userIdControl.value=data.userId;
+
+        window.scrollBy({top:-50000,behavior:"smooth"});
+
+     })
+     .catch(err=>{
+        cl(err);
+     })
+     .finally(()=>{
+        addbtn.classList.add("d-none");
+        updatebtn.classList.remove("d-none");
+        loader.classList.add("d-none");
+     })
 }
 
-postsform.addEventListener('submit', onPostSubmit);
+const onUpdateBtn=()=>{
+    //get id from backend db
+
+    let UPDATE_ID=localStorage.getItem("editId");
+
+    let UPDATE_POST={
+        title:titleControl.value,
+        body:contentControl.value,
+        userId:userIdControl.value,
+    }
+
+    //url
+
+    let UPDATE_URL=`${POST_URL}/${UPDATE_ID}`;
+    loader.classList.remove("d-none");
+    fetch(UPDATE_URL,{
+        method:"PATCH",
+        body:JSON.stringify(UPDATE_POST),
+        headers:{
+            "Auth":"token",
+            "Content-type":"Application/json",
+        }
+    })
+    .then(res=>{
+        return res.json();
+    })
+    .then(data=>{
+        
+        let card=[...document.getElementById(UPDATE_ID).children];
+
+        card[0].innerHTML=`<h2>${UPDATE_POST.title}</h2>`;
+        card[1].innerHTML=`<p>${UPDATE_POST.body}</p>`;
+
+        snackBar("the card is updated successFully!!!","success");
+
+        window.scrollBy({top:50000,behavior:"smooth"});
+    })
+    .catch(err=>{
+        cl(err);
+    })
+    .finally(()=>{
+        updatebtn.classList.add("d-none");
+        addbtn.classList.remove("d-none");
+        loader.classList.add("d-none");
+    })
+}
+
+const onRemove=(ele)=>{
+    //get id;
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+      }).then((result) => {
+        if (result.isConfirmed) {
+    
+            let REMOVE_Id=ele.closest(".card").id;
+
+            let REMOVE_URL=`${POST_URL}/${REMOVE_Id}`;
+            loader.classList.remove("d-none");
+            fetch(REMOVE_URL,{
+                method:"GET",
+                body:null,
+                headers:{
+                    "Auth":"token",
+                    "Content-type":"Application/json",
+                }
+            })
+            .then(res=>{
+                return res.json();
+            })
+            .then(data=>{
+                ele.closest(".card").remove();
+                snackBar("the card is removed successFully!!!","success");
+            })
+            .catch((err)=>{
+                cl(err);
+            })
+            .finally(()=>{
+                loader.classList.add("d-none");
+            })
+        }
+    });
+}
+
+postForm.addEventListener("submit",onPostForm);
+updatebtn.addEventListener("click", onUpdateBtn);
